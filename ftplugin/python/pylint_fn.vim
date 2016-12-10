@@ -14,7 +14,7 @@
 "
 " This script uses python, therefore VIm should be compiled with python
 " support. You can check it by issuing ":version" command, and search for
-" "+python" inside features list.
+" "+python" or "+python3" inside features list.
 "
 " Couple of ideas was taken from pyflakes.vim[2] plugin.
 "
@@ -44,111 +44,40 @@
 " [3] http://pypi.python.org/pypi/setuptools
 " }}}
 
+let s:plugin_path = expand('<sfile>:p:h', 1)
+
 if exists("b:did_pylint_plugin")
     finish " only load once
 else
     let b:did_pylint_plugin = 1
 endif
 
-if !exists('*s:CheckPylint')
-    function s:CheckPylint()
-        python << EOF
-try:
-    import vim
-    from pylint import lint
-    from pylint.reporters.text import TextReporter
-except ImportError:
-    vim.command("return 0")
-vim.command("return 1")
-EOF
-    endfunction
-endif
-
-if s:CheckPylint() == 0
-    finish
-endif
-
-if !exists("b:did_pylint_init")
-    let b:did_pylint_init = 0
-
-    if !has('python')
-        echoerr "Error: pylint_fn.vim requires Vim to be compiled with +python"
-        finish
+function! s:SetPython(msg)
+    if !exists('g:_python')
+        if has('python')
+            let g:_python = {'exec': 'python', 'file': 'pyfile'}
+        elseif has('python3')
+            let g:_python = {'exec': 'python3', 'file': 'py3file'}
+        else
+            echohl WarningMsg|echomsg a:msg|echohl None
+            finish
+        endif
     endif
+endfunction
 
-    python << EOF
-import sys
-import re
-from StringIO import StringIO
+function! s:LoadPylint()
+    let plugin_path = expand('<sfile>:p:h', 1)
+    if !exists('g:pylint_fn_initialized ')
+        call s:SetPython("Pylint command cannot be initialized - "
+                    \ . "no python support compiled in vim.")
+        execute g:_python['file'] . ' ' . s:plugin_path . '/pylint_fn.py'
+        let g:pylint_fn_initialized = 1
+    endif
+endfunction
 
-class VImPylint(object):
+call s:LoadPylint()
 
-    sys_stderr = sys.stderr
-    dummy_stderr = StringIO()
-    conf_msg = 'No config file found, using default configuration\n'
-
-    @classmethod
-    def run(self):
-        """execute pylint and fill the quickfix"""
-
-        # clear QF window
-        vim.command('call setqflist([])')
-
-        # args
-        args = ['-rn',  # display only the messages instead of full report
-                vim.current.buffer.name]
-
-        buf = StringIO()  # file-like buffer, instead of stdout
-        reporter = TextReporter(buf)
-
-        sys.stderr = self.dummy_stderr
-        lint.Run(args, reporter=reporter, exit=False)
-        sys.stderr = self.sys_stderr
-
-        self.dummy_stderr.seek(0)
-        error_list = self.dummy_stderr.readlines()
-        self.dummy_stderr.truncate(0)
-        if error_list and self.conf_msg in error_list:
-            error_list.remove(self.conf_msg)
-            if error_list:
-                raise Exception(''.join(error_list))
-
-        buf.seek(0)
-
-        bufnr = vim.current.buffer.number
-        code_line = {}
-        error_list = []
-
-        error_re = re.compile(r'^(?P<type>[C,R,W,E,F]):\s+?'
-                              r'(?P<lnum>[0-9]+),\s+?'
-                              r'(?P<col>[0-9]+):\s'
-                              r'(?P<text>.*)$')
-        for line in buf:
-            line = line.rstrip()  # remove trailing newline character
-
-            error_line = error_re.match(line)
-            if error_line:
-                error_line = error_line.groupdict()
-                error_line["bufnr"] = bufnr
-
-                error_list.append(error_line)
-
-        vim.command('call setqflist(%s)' % str(error_list))
-        if error_list:
-            vim.command('copen')
-
-EOF
-    let b:did_pylint_init = 1
-endif
-
-if !exists('*s:Pylint')
-    function s:Pylint()
-        python << EOF
-VImPylint.run()
-EOF
-    endfunction
-endif
-
-if !exists(":Pylint")
-    command Pylint call s:Pylint()
-endif
+function s:Pylint()
+    execute g:_python['exec'] . ' VImPylint.run()'
+endfunction
+command Pylint call s:Pylint()
