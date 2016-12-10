@@ -1,7 +1,7 @@
 " File: pylint_fn.vim
 " Author: Roman 'gryf' Dobosz (gryf73 at gmail.com)
-" Version: 1.1
-" Last Modified: 2015-09-20
+" Version: 1.2
+" Last Modified: 2016-12-10
 "
 " Description: " {{{
 "
