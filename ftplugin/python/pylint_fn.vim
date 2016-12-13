@@ -46,10 +46,8 @@
 
 let s:plugin_path = expand('<sfile>:p:h', 1)
 
-if exists("b:did_pylint_plugin")
+if exists(":Pep8")
     finish " only load once
-else
-    let b:did_pylint_plugin = 1
 endif
 
 function! s:SetPython(msg)
