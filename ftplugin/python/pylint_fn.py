@@ -3,7 +3,10 @@ Get pylint oputput on current buffer
 """
 import sys
 import re
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 try:
     from pylint import lint
