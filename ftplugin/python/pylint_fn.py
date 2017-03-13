@@ -12,7 +12,7 @@ try:
     from pylint import lint
     from pylint.reporters.text import TextReporter
 except ImportError:
-    pylint = None
+    lint = None
 
 import vim
 
@@ -28,7 +28,7 @@ class VImPylint(object):
     def run(self):
         """execute pylint and fill the quickfix"""
 
-        if not pylint:
+        if not lint:
             vim.command("echo 'Error: pylint_fm.vim requires module pylint'")
             return
 
