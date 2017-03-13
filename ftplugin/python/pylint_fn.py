@@ -9,7 +9,7 @@ try:
     from pylint import lint
     from pylint.reporters.text import TextReporter
 except ImportError:
-    raise AssertionError('Error: pylint_fm.vim requires module pylint')
+    pylint = None
 
 import vim
 
@@ -24,6 +24,10 @@ class VImPylint(object):
     @classmethod
     def run(self):
         """execute pylint and fill the quickfix"""
+
+        if not pylint:
+            vim.command("echo 'Error: pylint_fm.vim requires module pylint'")
+            return
 
         # clear QF window
         vim.command('call setqflist([])')

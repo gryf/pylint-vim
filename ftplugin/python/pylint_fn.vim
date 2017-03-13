@@ -46,7 +46,7 @@
 
 let s:plugin_path = expand('<sfile>:p:h', 1)
 
-if exists(":Pep8")
+if exists(":Pylint")
     finish " only load once
 endif
 
